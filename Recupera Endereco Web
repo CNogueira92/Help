@@ -1,0 +1,95 @@
+::::::::::::::::::::::::::::HTML:::::::::::::::::::::::::::::::::
+function recuperaEndereco(arguments) {
+                    $.ajax({
+                        type: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        url: "APP_Empresas_Cadastro.aspx/getEndereco",
+                        data: "{'strCEP': '" + arguments.value + "'}",
+                        dataType: "json",
+                        async: true,
+                        success: function (msg) {
+                            if (msg.d.indexOf("Erro") == -1) {
+                                var dados = msg.d.split(",");
+                                //Logradouro
+                                document.getElementById("<%=txtEndereco.ClientID %>").value = dados[0];
+
+                                //Bairro
+                                document.getElementById("<%=txtBairro.ClientID %>").value = dados[1];
+
+                                //Estado
+                                document.getElementById("<%=ddlUF.ClientID %>").value = dados[3];
+
+
+                                //Municipio
+                                document.getElementById("<%=ddlMunicipio.ClientID %>").value = dados[4];
+                            }
+                            else {
+                                //Logradouro
+                                document.getElementById("<%=txtEndereco.ClientID %>").value = "";
+
+                                //Bairro
+                                document.getElementById("<%=txtBairro.ClientID %>").value = "";
+
+
+                            }
+
+                        },
+                        erro: function (msg) {
+
+                        }
+                    });
+                    
+::::::::::::::::::::::::::::CODE:::::::::::::::::::::::::::::::::                    
+
+ [System.Web.Services.WebMethod]
+        public static string getEndereco(string strCEP)
+        {
+            string strRetorno = "";
+            try
+            {
+                var Session = HttpContext.Current.Session;
+
+                HttpWebRequest requisicao = (HttpWebRequest)WebRequest.Create("http://viacep.com.br/ws/" + strCEP + "/json/");
+                HttpWebResponse resposta = (HttpWebResponse)requisicao.GetResponse();
+                int cont; byte[] buffer = new byte[1000];
+                StringBuilder sb = new StringBuilder();
+                string temp;
+                Stream stream = resposta.GetResponseStream();
+                do
+                {
+                    cont = stream.Read(buffer, 0, buffer.Length);
+                    temp = Encoding.UTF8.GetString(buffer, 0, cont).Trim();
+                    sb.Append(temp);
+                }
+                while (cont > 0);
+                string pagina = sb.ToString();
+
+                if (pagina.IndexOf("<font color=\"black\">CEP NAO ENCONTRADO</font>") >= 0)
+                {
+                    strRetorno = "Erro";
+                }
+                else
+                {
+                    dynamic stuff = JObject.Parse(pagina);
+                    string logradouro = stuff.logradouro;
+                    string bairro = stuff.bairro;
+                    string cidade = stuff.localidade;
+                    string estado = stuff.uf;
+                    string codigoMunicipio = stuff.ibge;
+                    string resultado = string.Concat(logradouro, ",", bairro, ",", cidade, ",", estado, ",", codigoMunicipio);
+                    strRetorno = resultado;
+
+                    //Armazena municipio na sessão
+                    Session.Add("Codigo_Municipio", stuff.ibge);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Log.SaveLog(Constants.INTEGRATOR, ex);
+                strRetorno = "Erro";
+            }
+
+
+            return strRetorno;
+        }
