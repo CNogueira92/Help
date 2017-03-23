@@ -1,0 +1,177 @@
+#region Criptografa/ Descriptograda string
+
+        /// <summary>
+        /// Metodo responsavel por criptografar e descriptografar string
+        /// usando o metodo nativo Rijndael 
+        /// </summary>
+        /// <remarks>Desenvolvido por Carlos Nogueira - 24/06/2016</remarks>
+        /// <returns></returns>
+        public static string ToEncryptionString(this string strConteudo, int intTipo)
+        {
+            string strRetorno = string.Empty;
+            try
+            {
+                //trata o caractere + que na query string representa espaço
+                strConteudo = strConteudo.Replace(" ", "+");
+
+                //Recupera a chave padrão e o vetor para a variavel SALT
+                byte[] byteSalt = Constants.CRIPTOGRAFIA_SALT;
+                string strChave = Constants.CRIPTOGRAFIA_CHAVE;
+
+                //Declara o byte derivado que será usado pada determinar a chave e o vetor no Rijndael
+                Rfc2898DeriveBytes rfcDerivate = new Rfc2898DeriveBytes(strChave, byteSalt);
+
+                //Determina o tipo
+                switch (intTipo)
+                {
+                    case Constants.CRIPTOGRAFIA_TIPO_CRIPTOGRAFAR:
+                        // Cria uma intancia da classe Rijndael
+                        using (Rijndael myRijndael = Rijndael.Create())
+                        {
+
+
+                            //Recupera chave e vetor
+                            myRijndael.Key = rfcDerivate.GetBytes(16);
+                            myRijndael.IV = rfcDerivate.GetBytes(16);
+
+                            // Criptograda a string para um arry de bytes.
+                            byte[] byteEncrypted = EncryptStringToBytes(strConteudo, myRijndael.Key, myRijndael.IV);
+
+                            //Convert para a base 64 para retorno
+                            strRetorno = Convert.ToBase64String(byteEncrypted.ToArray());
+
+                        }
+                        break;
+
+                    case Constants.CRIPTOGRAFIA_TIPO_DESCRIPTOGRAFAR:
+                        // Cria uma intancia da classe Rijndael
+                        using (Rijndael myRijndael = Rijndael.Create())
+                        {
+
+                            //Recupera chave e vetor
+                            myRijndael.Key = rfcDerivate.GetBytes(16);
+                            myRijndael.IV = rfcDerivate.GetBytes(16);
+
+                            //Recupera os bytes da string criptografa na base 64 
+                            byte[] desencript = System.Convert.FromBase64String(strConteudo);
+
+                            // Descriptografa os bytes para o retorno.
+                            strRetorno = DecryptStringFromBytes(desencript, myRijndael.Key, myRijndael.IV);
+
+                        }
+                        break;
+                }
+            }
+#pragma warning disable CS0168 // The variable 'ex' is declared but never used
+            catch (Exception ex)
+#pragma warning restore CS0168 // The variable 'ex' is declared but never used
+
+            { return strRetorno; }
+
+            return strRetorno;
+        }
+
+
+        /// <summary>
+        /// Metodo responsabel por criptografar string de acordo com os parametros chave e vetor
+        /// </summary>
+        /// <param name="plainText"></param>
+        /// <param name="Key"></param>
+        /// <param name="IV"></param>
+        /// <returns></returns>
+        private static byte[] EncryptStringToBytes(string plainText, byte[] Key, byte[] IV)
+        {
+            // Verifica os parametros
+            if (plainText == null || plainText.Length <= 0)
+                throw new ArgumentNullException("plainText");
+            if (Key == null || Key.Length <= 0)
+                throw new ArgumentNullException("Key");
+            if (IV == null || IV.Length <= 0)
+                throw new ArgumentNullException("Key");
+            byte[] encrypted;
+
+            // Cria um objeto do tipo Rijndael 
+            // expicando a chave e vetor
+            using (Rijndael rijAlg = Rijndael.Create())
+            {
+                rijAlg.Key = Key;
+                rijAlg.IV = IV;
+
+                // Cria o encriptador e transforma em stream 
+                ICryptoTransform encryptor = rijAlg.CreateEncryptor(rijAlg.Key, rijAlg.IV);
+
+                // Cria o streams usado para criptografia.
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+
+                            //Escreve todos os dados em stream.
+                            swEncrypt.Write(plainText);
+                        }
+                        encrypted = msEncrypt.ToArray();
+                    }
+                }
+            }
+
+
+            // Retorna os bytes criptografados da memoria stream.
+            return encrypted;
+
+        }
+
+
+        /// <summary>
+        /// Metodo responsavel por descriptografar a string acordo com os parametros chave e vetor
+        /// </summary>
+        /// <param name="cipherText"></param>
+        /// <param name="Key"></param>
+        /// <param name="IV"></param>
+        /// <returns></returns>
+        private static string DecryptStringFromBytes(byte[] cipherText, byte[] Key, byte[] IV)
+        {
+            // Verifica os parametros
+            if (cipherText == null || cipherText.Length <= 0)
+                throw new ArgumentNullException("cipherText");
+            if (Key == null || Key.Length <= 0)
+                throw new ArgumentNullException("Key");
+            if (IV == null || IV.Length <= 0)
+                throw new ArgumentNullException("Key");
+
+            // Declara a string que sera usada para descriptografar o texto
+            string plaintext = null;
+
+            // Cria um objeto do tipo Rijndael 
+            // expicando a chave e vetor
+            using (Rijndael rijAlg = Rijndael.Create())
+            {
+                rijAlg.Key = Key;
+                rijAlg.IV = IV;
+
+                //Cria o encriptador e transforma em stream 
+                ICryptoTransform decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV);
+
+                // Cria o streams usado para a descriptografia.
+                using (MemoryStream msDecrypt = new MemoryStream(cipherText))
+                {
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+
+                            // Lê os bytes descriptografados do stream
+                            // e insere na string.
+                            plaintext = srDecrypt.ReadToEnd();
+                        }
+                    }
+                }
+
+            }
+
+            return plaintext;
+
+        }
+
+        #endregion
