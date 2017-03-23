@@ -1,0 +1,7 @@
+   CapitalLeads ws = new CapitalLeads();
+
+            //Create the network credentials and assign
+            NetworkCredential netCredential = new NetworkCredential('user','senha');
+            Uri uri = new Uri(ws.Url);
+            ICredentials credentials = netCredential.GetCredential(uri, "Basic");
+            ws.Credentials = credentials;
