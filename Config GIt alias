@@ -1,0 +1,16 @@
+[user]
+	name = Carlos Nogueira
+	email = ''
+[alias]
+	a = !git add . && git status
+	c = commit
+	cm = commit -m
+	acm = !git add . && git commit -m
+	s = status
+	ch = checkout
+	ps = push
+	pst = !git push && git push --tags
+	pl = pull
+	plr = pull --rebase
+	master = !git checkout master && git status
+	develop = !git checkout develop && git status
