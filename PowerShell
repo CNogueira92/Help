@@ -1,0 +1,37 @@
+#Criando a conexão com o servidor remoto
+
+•	Habilitar a execução de scripts powershell no servidor
+o	Abra o console powershell e execute o comando:
+set-executionpolicy RemoteSigned 
+
+
+•	Criar o script para copia dos arquivos
+	Abra o PowerShell ISE para criação do script
+Abaixo segue um exemplo do script gerado:
+
+net use \\IPServidor Senha /USER:Usuario
+
+#declarando as variáveis com os parâmetros que serão usados para a cópia dos arquivos
+$source = 'Caminho de onde deve pegar os arquivos'
+$dest = 'IPServidor + Caminho para onde deve copiar os arquivos'
+$exclude = @('*.config, *.exe, *.xml, teste.txt') # arquivos que serão excluídos 
+
+#Comando responsável por pegar o arquivo de um servidor e copiar para outro 
+Get-ChildItem $source -Recurse -Exclude $exclude | Copy-Item -Destination {Join-Path $dest $_.FullName.Substring($source.length)} -Force
+
+
+Get-ChildItem #Comando para recuperar os arquivos
+-Recurse #Recupera tudo que estiver na pasta recursivamente
+-Exclude #Define quais arquivos serão excluídos
+Copy-Item #Comando para copiar os arquivos
+-Destination  #Define de onde deve pegar os arquivos
+Join-Path #Comando para concatenar caminhos
+-Force #Força copiar o arquivo caso já exista (Sobrescrever) 
+
+--Criar o Schedule windowns
+actions
+Program/Script 
+powershell.exe
+
+add arquments(optinonarl)
+-command "Caminho"
