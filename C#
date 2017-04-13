@@ -1,13 +1,28 @@
-        -- Reverter string    
+        // Reverter string    
         public bool ReverseString(string s)
         {
             char[] arr = s.ToCharArray();
             Array.Reverse(arr);
             return (new string(arr).Equals(s));
         }
-        recupera decada
+       
+      // recupera decada
          int centuryFromYear(int year)
         {
             return Convert.ToInt32(Math.Floor((Convert.ToDecimal(year) + 99) / 100));
 
+        }
+
+     //Helper para transformar priemira letra em Maiscula
+          public static string CapitalizeLetter(this string str)
+        {
+            string[] strAux = str.Split(' ');
+            for (int i = 0; i < strAux.Length; i++)
+            {
+                if (strAux[i].ToString().Length > 2)
+                    strAux[i] = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(strAux[i].ToString().ToLower());
+                else
+                    strAux[i] = strAux[i].ToString().ToLower();
+            }
+            return string.Join(" ", strAux);
         }
