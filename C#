@@ -13,7 +13,7 @@
 
         }
 
-     //Helper para transformar priemira letra em Maiscula
+     //Helper para transformar priemira letra em Maiuscula
           public static string CapitalizeLetter(this string str)
         {
             string[] strAux = str.Split(' ');
@@ -25,4 +25,30 @@
                     strAux[i] = strAux[i].ToString().ToLower();
             }
             return string.Join(" ", strAux);
+        }
+
+
+        //Helper para Converter string em BASE64 
+       public static string ToBase64Encode(this string  plainText)
+        {
+            var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes);
+        }
+ 
+        //Helper para Converter string em Stream 
+        public static Stream ToStream(this string @this)
+        {
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream, Encoding.GetEncoding("iso-8859-1"));
+            writer.Write(@this);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
+        }
+         
+          //Helper para Converter string em XML
+        public static T ParseXml<T>(this string @this) where T : class
+        {
+            var reader = XmlReader.Create(@this.Trim().ToStream(), new XmlReaderSettings() { ConformanceLevel = ConformanceLevel.Document });
+            return new XmlSerializer(typeof(T)).Deserialize(reader) as T;
         }
