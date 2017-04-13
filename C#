@@ -1,0 +1,13 @@
+        -- Reverter string    
+        public bool ReverseString(string s)
+        {
+            char[] arr = s.ToCharArray();
+            Array.Reverse(arr);
+            return (new string(arr).Equals(s));
+        }
+        recupera decada
+         int centuryFromYear(int year)
+        {
+            return Convert.ToInt32(Math.Floor((Convert.ToDecimal(year) + 99) / 100));
+
+        }
