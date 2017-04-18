@@ -1,0 +1,101 @@
+/* EXIBE PROCEDURES ALTERADAS NOS ULTIMOS 7 DIAS */
+SELECT name, modify_date
+    FROM sys.objects
+    WHERE type = 'P'
+        AND DATEDIFF(D,modify_date, GETDATE()) < 7  --- Dias (Pode ser alterado a quantidade de dias)
+    ORDER BY modify_date DESC
+ 
+ 
+/* EXIBE TABELAS ALTERADAS (ESTRUTURA) NOS ULTIMOS 7 DIAS */
+SELECT name, modify_date
+    FROM sys.objects
+    WHERE type = 'U'
+        AND DATEDIFF(D,modify_date, GETDATE()) < 7  --- Dias (Pode ser alterado a quantidade de dias)
+    ORDER BY modify_date DESC
+	
+	
+/* Comando para negar */
+DENY SELECT ON  dbo.CUA_Aplicacoes TO [egomes]
+DENY CONTROL ON dbo.CUA_Aplicacoes TO [egomes]
+DENY DELETE ON dbo.CUA_Aplicacoes TO [egomes]
+DENY INSERT ON dbo.CUA_Aplicacoes TO [egomes]
+DENY REFERENCES ON dbo.CUA_Aplicacoes TO [egomes]
+DENY TAKE OWNERSHIP ON dbo.CUA_Aplicacoes TO [egomes]
+DENY UPDATE ON dbo.CUA_Aplicacoes TO [egomes]
+DENY VIEW DEFINITION ON dbo.CUA_Aplicacoes TO [egomes]
+DENY VIEW CHANGE TRACKING ON dbo.CUA_Aplicacoes TO [egomes]
+ 
+ /* Comando para garantir */
+GRANT SELECT ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT CONTROL ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT DELETE ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT INSERT ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT REFERENCES ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT TAKE OWNERSHIP ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT UPDATE ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT VIEW DEFINITION ON dbo.CUA_Aplicacoes TO [egomes]
+GRANT VIEW CHANGE TRACKING ON dbo.CUA_Aplicacoes TO [egomes]
+DENY é para negar, GRANT é para liberar
+
+
+
+ 
+ /* Recupera comandos travados no banco */
+select r1.session_id,
+         r1.start_time,
+         r1.status,
+         r1.database_id,
+         (SELECT DB_NAME(r1.database_id)),
+         r1.user_id,
+         (SELECT USER_NAME(r1.user_id)),   
+         r1.transaction_id,     
+         (SELECT sqltext.TEXT     
+            FROM sys.dm_exec_requests req
+            CROSS APPLY sys.dm_exec_sql_text(sql_handle) AS sqltext
+            WHERE Req.session_id = r1.session_id)                              
+from sys.dm_exec_requests r1 with (nolock)
+inner join sys.dm_exec_requests r2 with (nolock)
+on r1.session_id = r2.blocking_session_id
+where r1.session_id > 50
+and r1.session_id <> @@spid
+
+
+-- find blocking sessions with special context_info and kill the sessions
+set nocount on;
+set deadlock_priority low;
+declare @sqlcmd varchar(max);
+declare @debug bit; -- 1=print out kill command, 0=execute kill command
+ 
+set @debug =0; -- 1=print, 0=exec
+set @sqlcmd='';
+ 
+; with cte (Session_id, Context_info) as
+(
+select r1.session_id, r1.context_info from sys.dm_exec_requests r1 with (nolock)
+inner join sys.dm_exec_requests r2 with (nolock)
+on r1.session_id = r2.blocking_session_id
+where r1.session_id > 50
+and r1.session_id <> @@spid
+union
+select s.session_id, s.context_info
+from sys.dm_exec_sessions s with (nolock)
+inner join sys.dm_exec_requests r with (nolock)
+on s.session_id = r.blocking_session_id
+and r.session_id <> @@spid
+)
+select TOP 1 @sqlcmd = @sqlcmd + 'kill ' + cast(session_id as varchar) +';' --+ char(0x0d) + char(0x0a)
+from cte
+--where context_info = 0xdba911; -- 0xdba911 for labelling low priority sessions
+ORDER BY session_id DESC
+if @debug = 1
+print @sqlcmd;
+else
+exec (@sqlcmd);
+
+---Localiza conteúdo dentro de procedure
+SELECT A.NAME, A.TYPE, B.TEXT
+                FROM SYSOBJECTS  A (nolock)
+                JOIN SYSCOMMENTS B (nolock)   ON A.ID = B.ID
+                WHERE B.TEXT LIKE '%SELECT DISTINCT%'  --- Informação a ser procurada no corpo da procedure, funcao ou view XXXXX
+                AND A.TYPE = 'P'                                           --- Tipo de objeto a ser localizado no caso procedure (P) e table (T)
+                ORDER BY A.NAME
