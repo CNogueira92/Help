@@ -15,8 +15,8 @@
                 strConteudo = strConteudo.Replace(" ", "+");
 
                 //Recupera a chave padrão e o vetor para a variavel SALT
-                byte[] byteSalt = Constants.CRIPTOGRAFIA_SALT;
-                string strChave = Constants.CRIPTOGRAFIA_CHAVE;
+                byte[] byteSalt = { 2, 1, 2, 1, 0, 0, 5, 0 };
+                string strChave = "TESTECRYP";
 
                 //Declara o byte derivado que será usado pada determinar a chave e o vetor no Rijndael
                 Rfc2898DeriveBytes rfcDerivate = new Rfc2898DeriveBytes(strChave, byteSalt);
