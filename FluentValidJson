@@ -1,0 +1,6 @@
+var jArray = JArray.Parse(response.Content);
+
+            for (int i = 0; i < jArray.Count; i++)
+            {
+               ((JObject)jArray[i]).Should().Contain(key, new JValue(value));
+            } 
