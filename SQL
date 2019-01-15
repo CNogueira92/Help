@@ -1,3 +1,19 @@
+/*Executa o Select recursivamente*/
+;WITH Recursives AS (
+        Select Id from [dbo].[LinkCategory]
+        where ParentLinkCategoryId =  1 
+        UNION ALL
+        SELECT  t.Id       
+        FROM    [dbo].[LinkCategory] t INNER JOIN
+                Recursives r    ON  t.ParentLinkCategoryId = r.id
+)
+SELECT  *
+FROM    Recursives
+order by Id
+
+
+
+
 /* EXIBE PROCEDURES ALTERADAS NOS ULTIMOS 7 DIAS */
 SELECT name, modify_date
     FROM sys.objects
